@@ -17,6 +17,9 @@ void setup() {
 
 	// set initial LED state
 	digitalWrite(ledPin, ledState);
+
+	Serial.begin(9600);
+	Serial.print("s");
 }
 
 void loop() {
@@ -44,6 +47,7 @@ void loop() {
 			// only toggle the LED if the new button state is HIGH
 			if (buttonState == HIGH) {
 				ledState = !ledState;
+				Serial.print("t");
 			}
 		}
 	}
