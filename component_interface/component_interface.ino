@@ -2,7 +2,7 @@ const int buttonPin = 2;    // the number of the pushbutton pin
 const int ledPin    = 3;    // the number of the LED pin
 
 // Variables will change:
-int ledState = HIGH;         // the current state of the output pin
+int ledState = LOW;          // the current state of the output pin
 int buttonState;             // the current reading from the input pin
 int lastButtonState = LOW;   // the previous reading from the input pin
 
@@ -44,16 +44,27 @@ void loop() {
 		if (reading != buttonState) {
 			buttonState = reading;
 
-			// only toggle the LED if the new button state is HIGH
+			// Send the state toggle message if the buttonState is HIGH
 			if (buttonState == HIGH) {
-				ledState = !ledState;
-				Serial.print("t");
+				Serial.write('t');
 			}
 		}
 	}
 
-	// set the LED:
-	digitalWrite(ledPin, ledState);
+	if (Serial.available() > 0) {
+		char readChar = Serial.read();
+
+		// If the 'record' message has been received, turn the LED on
+		if (readChar == 'r')
+			ledState = HIGH;
+
+		// If the 'play' message has been received, turn the LED off
+		else if (readChar == 'p')
+			ledState = LOW;
+
+		// set the LED:
+		digitalWrite(ledPin, ledState);
+	}
 
 	// save the reading.  Next time through the loop,
 	// it'll be the lastButtonState:
