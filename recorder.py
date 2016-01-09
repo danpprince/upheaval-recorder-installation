@@ -25,7 +25,13 @@ data_idx = 0
 def callback(in_data, frame_count, time_info, status):
     global data_idx
     buffer_data = data[data_idx:data_idx+frame_count]
-    data_idx = data_idx + frame_count
+
+    # If the end of the data is reached, read from the beginning
+    if buffer_data.size/2 < frame_count:
+        needed_samples = frame_count - buffer_data.size/2
+        buffer_data = numpy.concatenate((buffer_data, data[0:needed_samples]))
+
+    data_idx = (data_idx+frame_count) % (data.size/2)
 
     # Reshape the buffer data to interleave frames
     out_data = buffer_data.reshape(buffer_data.size)
