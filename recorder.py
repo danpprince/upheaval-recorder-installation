@@ -1,7 +1,8 @@
+import numpy
 import pyaudio
+from scipy.io import wavfile
 import serial
 import time
-import wave
 
 
 BAUD = 9600
@@ -16,17 +17,25 @@ p = pyaudio.PyAudio()
 
 # Open the audio file for playing
 wavname = 'DC_Break30_165.wav'
-wf = wave.open(wavname, 'rb')
+rate, data = wavfile.read(wavname)
+data_idx = 0
+
 
 # Define callback for playing audio
 def callback(in_data, frame_count, time_info, status):
-    data = wf.readframes(frame_count)
-    return (data, pyaudio.paContinue)
+    global data_idx
+    buffer_data = data[data_idx:data_idx+frame_count]
+    data_idx = data_idx + frame_count
+
+    # Reshape the buffer data to interleave frames
+    out_data = buffer_data.reshape(buffer_data.size)
+
+    return (out_data, pyaudio.paContinue)
 
 # Open stream using callback
-stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                channels=wf.getnchannels(),
-                rate=wf.getframerate(),
+stream = p.open(format=pyaudio.paInt16,
+                channels=data.shape[1],
+                rate=rate,
                 output=True,
                 stream_callback=callback)
 
