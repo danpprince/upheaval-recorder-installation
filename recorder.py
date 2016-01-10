@@ -3,9 +3,11 @@ import pyaudio
 from scipy.io import wavfile
 import serial
 import time
+import wave
 
 
-BAUD = 9600
+BAUD         = 9600
+RECORD_CHUNK = 1024
 
 # Define recording and playing states
 PLAYING   = 0
@@ -38,36 +40,79 @@ def callback(in_data, frame_count, time_info, status):
 
     return (out_data, pyaudio.paContinue)
 
-# Open stream using callback
-stream = p.open(format=pyaudio.paInt16,
-                channels=data.shape[1],
-                rate=rate,
-                output=True,
-                stream_callback=callback)
+# Open stream for playing back recordings using callback
+out_stream = p.open(format=pyaudio.paInt16,
+                    channels=data.shape[1],
+                    rate=rate,
+                    output=True,
+                    stream_callback=callback)
+
+# Open stream for recording from microphone using blocking API
+rec_dev_name = 'Input 1/2 (Komplete Audio 6 WDM'
+rec_dev_idx = -1
+
+for i in range(p.get_device_count()):
+    if rec_dev_name in p.get_device_info_by_index(i)['name']:
+        rec_dev_idx = i
+        break
+
+if rec_dev_idx == -1:
+    print('Error: unable to open device ' + rec_dev_name)
+
+
+in_stream = p.open(format=pyaudio.paInt16,
+                   channels=1,
+                   rate=44100,
+                   input=True,
+                   input_device_index=rec_dev_idx,
+                   frames_per_buffer=RECORD_CHUNK)
 
 # Start the audio out stream
-stream.start_stream()
+out_stream.start_stream()
 ino_serial = serial.Serial('COM3', BAUD)
+
+rec_frames = []
+rec_name_idx = 0
 
 while True:
     char = ''
     if ino_serial.in_waiting > 0:
         char = ino_serial.read()
 
-    if char == 's':
-        print('Controller restarted')
-    elif char == 't':
-        print('Button pressed, new state is'),
+        if char == 's':
+            print('Controller restarted')
+        elif char == 't':
+            print('Button pressed, new state is'),
 
-        if state == PLAYING:
-            state = RECORDING
-            ino_serial.write('r')
-            stream.stop_stream()
-            print('recording')
-        elif state == RECORDING:
-            state = PLAYING
-            ino_serial.write('p')
-            stream.start_stream()
-            print('playing')
+            if state == PLAYING:
+                state = RECORDING
+                ino_serial.write('r')
+                print('recording')
 
-    time.sleep(0.01)
+                in_stream.start_stream()
+                out_stream.stop_stream()
+
+            elif state == RECORDING:
+                state = PLAYING
+                ino_serial.write('p')
+                print('playing')
+
+                in_stream.stop_stream()
+
+                # Save record data in a new wave file
+                wf = wave.open('./rec/' + str(rec_name_idx) + '.wav', 'wb')
+                wf.setnchannels(1)
+                wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+                wf.setframerate(44100)
+                wf.writeframes(b''.join(rec_frames))
+                wf.close()
+
+                rec_frames = []
+                rec_name_idx = rec_name_idx + 1
+
+                out_stream.start_stream()
+
+    if state == RECORDING:
+        rec_frames.append(in_stream.read(RECORD_CHUNK))
+    else:
+        time.sleep(0.01)
