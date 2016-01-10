@@ -88,7 +88,6 @@ out_stream.start_stream()
 ino_serial = serial.Serial('COM3', BAUD)
 
 rec_frames = []
-rec_name_idx = 0
 
 while True:
     char = ''
@@ -130,7 +129,6 @@ while True:
                 wavnames = glob('./play/*.wav')
 
                 rec_frames = []
-                rec_name_idx = rec_name_idx + 1
 
                 out_stream.start_stream()
 
