@@ -10,7 +10,7 @@ import wave
 
 
 BAUD         = 9600
-RECORD_CHUNK = 1024
+AUDIO_CHUNK  = 1024
 
 # Define recording and playing states
 PLAYING   = 0
@@ -29,39 +29,12 @@ rate, data = wavfile.read(current_file)
 data_idx = 0
 
 
-# Define callback for playing audio
-def callback(in_data, frame_count, time_info, status):
-    global current_file, data, data_idx
-    buffer_data = data[data_idx:data_idx+frame_count]
-
-    # If the end of the data is reached, concatenate a new file
-    if len(data) <= data_idx+frame_count:
-        # Select a new file to play next that is not the same as the current file
-        new_wav_candidates = [f for f in wavnames if f != current_file]
-        new_file = new_wav_candidates[randint(0, len(new_wav_candidates)-1)]
-        new_rate, new_data = wavfile.read(new_file)
-
-        needed_samples = frame_count - buffer_data.size
-        buffer_data = numpy.concatenate((buffer_data, new_data[0:needed_samples]))
-
-        data_idx = (data_idx+frame_count) % (data.size)
-        current_file = new_file
-        data = new_data
-
-    else:
-        data_idx = (data_idx+frame_count) % (data.size)
-
-    # Reshape the buffer data to interleave frames
-    out_data = buffer_data.reshape(buffer_data.size)
-
-    return (out_data, pyaudio.paContinue)
-
-# Open stream for playing back recordings using callback
+# Open stream for playing back recordings using blocking API
 out_stream = p.open(format=pyaudio.paInt16,
                     channels=1,
-                    rate=rate,
+                    rate=44100,
                     output=True,
-                    stream_callback=callback)
+                    frames_per_buffer=AUDIO_CHUNK)
 
 # Open stream for recording from microphone using blocking API
 rec_dev_name = 'Input 1/2 (Komplete Audio 6 WDM'
@@ -81,7 +54,7 @@ in_stream = p.open(format=pyaudio.paInt16,
                    rate=44100,
                    input=True,
                    input_device_index=rec_dev_idx,
-                   frames_per_buffer=RECORD_CHUNK)
+                   frames_per_buffer=AUDIO_CHUNK)
 
 # Start the audio out stream
 out_stream.start_stream()
@@ -133,6 +106,23 @@ while True:
                 out_stream.start_stream()
 
     if state == RECORDING:
-        rec_frames.append(in_stream.read(RECORD_CHUNK))
-    else:
-        time.sleep(0.01)
+        # Get new audio frames from the input stream
+        rec_frames.append(in_stream.read(AUDIO_CHUNK))
+
+    elif state == PLAYING:
+        # Write audio frames to the output stream
+        buffer_data = data[data_idx:data_idx+AUDIO_CHUNK]
+        out_stream.write(buffer_data)
+
+        data_idx = data_idx + AUDIO_CHUNK/2
+
+        # If the end of the current wavfile is reached, play a new file
+        if data_idx >= len(data):
+            # Select a new file to play next that is not the same as the current file
+            new_wav_candidates = [f for f in wavnames if f != current_file]
+            new_file = new_wav_candidates[randint(0, len(new_wav_candidates)-1)]
+            new_rate, new_data = wavfile.read(new_file)
+
+            current_file = new_file
+            data         = new_data
+            data_idx = 0
