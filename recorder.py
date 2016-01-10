@@ -1,3 +1,4 @@
+from datetime import datetime
 from glob import glob
 import numpy
 import pyaudio
@@ -99,6 +100,7 @@ while True:
         elif char == 't':
             print('Button pressed, new state is'),
 
+            # If state is currently PLAYING, make the new state RECORDING
             if state == PLAYING:
                 state = RECORDING
                 ino_serial.write('r')
@@ -107,6 +109,7 @@ while True:
                 in_stream.start_stream()
                 out_stream.stop_stream()
 
+            # Else if state is currently RECORDING, make the new state PLAYING
             elif state == RECORDING:
                 state = PLAYING
                 ino_serial.write('p')
@@ -114,13 +117,17 @@ while True:
 
                 in_stream.stop_stream()
 
-                # Save record data in a new wave file
-                wf = wave.open('./rec/' + str(rec_name_idx) + '.wav', 'wb')
+                # Save record data in a new wave file with the current timestamp
+                new_fname = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                wf = wave.open('./play/rec_' + new_fname + '.wav', 'wb')
                 wf.setnchannels(1)
                 wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
                 wf.setframerate(44100)
                 wf.writeframes(b''.join(rec_frames))
                 wf.close()
+
+                # Get the new list of wavfiles 
+                wavnames = glob('./play/*.wav')
 
                 rec_frames = []
                 rec_name_idx = rec_name_idx + 1
