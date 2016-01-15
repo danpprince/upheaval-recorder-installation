@@ -69,9 +69,13 @@ if port_count == 1:
     port_dev_id = port.device
     ino_serial = serial.Serial(port_dev_id, BAUD)
 elif port_count > 1:
+    port_name = 'COM3'
     print('Multiple ports available:')
     for port in list_ports.comports():
         print(port)
+    print('Opening port ' + port_name)
+    ino_serial = serial.Serial(port_name, BAUD)
+    
 else:
     print('No ports available, please connect the Arduino')
 
