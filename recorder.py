@@ -5,6 +5,7 @@ import pyaudio
 from random import randint
 from scipy.io import wavfile
 import serial
+import serial.tools.list_ports as list_ports
 import time
 import wave
 
@@ -58,7 +59,21 @@ in_stream = p.open(format=pyaudio.paInt16,
 
 # Start the audio out stream
 out_stream.start_stream()
-ino_serial = serial.Serial('COM3', BAUD)
+
+# List the available serial ports, pick automatically if only one avaliable
+port_count = sum([1 for _ in list_ports.comports()]) 
+if port_count == 1:
+    port = next(list_ports.comports())
+    print('One serial port available, opening :' + str(port))
+    port_dev_id = port.device
+    ino_serial = serial.Serial(port_dev_id, BAUD)
+elif port_count > 1:
+    print('Multiple ports available:')
+    for port in list_ports.comports():
+        print(port)
+else:
+    print('No ports available, please connect the Arduino')
+
 
 rec_frames = []
 
