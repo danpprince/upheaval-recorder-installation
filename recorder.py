@@ -10,8 +10,9 @@ import time
 import wave
 
 
-BAUD         = 9600
-AUDIO_CHUNK  = 1024
+BAUD         =  9600
+AUDIO_CHUNK  =  1024
+SAMPLE_RATE  = 44100
 
 # Define recording and playing states
 PLAYING   = 0
@@ -33,7 +34,7 @@ data_idx = 0
 # Open stream for playing back recordings using blocking API
 out_stream = p.open(format=pyaudio.paInt16,
                     channels=1,
-                    rate=44100,
+                    rate=SAMPLE_RATE,
                     output=True,
                     frames_per_buffer=AUDIO_CHUNK)
 
@@ -52,7 +53,7 @@ if rec_dev_idx == -1:
 
 in_stream = p.open(format=pyaudio.paInt16,
                    channels=1,
-                   rate=44100,
+                   rate=SAMPLE_RATE,
                    input=True,
                    input_device_index=rec_dev_idx,
                    frames_per_buffer=AUDIO_CHUNK)
@@ -109,7 +110,7 @@ while True:
                 wf = wave.open('./play/rec_' + new_fname + '.wav', 'wb')
                 wf.setnchannels(1)
                 wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-                wf.setframerate(44100)
+                wf.setframerate(SAMPLE_RATE)
                 wf.writeframes(b''.join(rec_frames))
                 wf.close()
 
