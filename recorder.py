@@ -40,6 +40,10 @@ def save_new_file(frames):
 # should be played again
 RECENTLY_PLAYED_LEN = 5
 
+# Set a maximum time in seconds for recordings to ensure that many recordings
+# are able to be cycled through in a short amount of time
+MAX_REC_TIME = 45
+
 # Set the directory for recordings to be read from and written to
 REC_DIR = 'play/'
 
@@ -196,7 +200,30 @@ while True:
                 log.debug('Starting out stream')
                 out_stream.start_stream()
 
-    if state == RECORDING:
+    if state == RECORDING and len(rec_frames)*AUDIO_CHUNK > SAMPLE_RATE*MAX_REC_TIME:
+        # End the current recording if it is greater than the max record time
+        log.info('Recording timeout, max time of ' + str(MAX_REC_TIME) + ' reached')
+        state = PLAYING
+        ino_serial.write('p')
+
+        log.debug('Stopping in stream')
+        in_stream.stop_stream()
+
+        new_fname = save_new_file(rec_frames)
+
+        # Play this newly recorded file next
+        up_next_files.append(basename(new_fname))
+
+        # Get the new list of wavfiles 
+        wavnames = [basename(f) for f in glob(REC_DIR + '*.wav')]
+
+        rec_frames = []
+
+        log.debug('Starting out stream')
+        out_stream.start_stream()
+
+
+    elif state == RECORDING:
         # Get new audio frames from the input stream
         rec_frames.append(in_stream.read(AUDIO_CHUNK))
 
