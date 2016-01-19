@@ -14,6 +14,13 @@ import time
 import wave
 
 
+# Communication rate constant for Arduino
+BAUD =  9600
+
+# Audio data constants
+AUDIO_CHUNK  =  1024
+SAMPLE_RATE  = 44100
+
 # Save recorded data in a new wave file with the current timestamp
 def save_new_file(frames):
     timestamp_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -27,9 +34,6 @@ def save_new_file(frames):
     wf.close()
     return new_fname
 
-BAUD         =  9600
-AUDIO_CHUNK  =  1024
-SAMPLE_RATE  = 44100
 
 # Set a constant size for the recently played queue in order to control
 # the number of played recordings that must occur before a single recording
