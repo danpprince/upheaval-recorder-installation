@@ -8,6 +8,7 @@ from random import randint
 from scipy.io import wavfile
 import serial
 import serial.tools.list_ports as list_ports
+import sys
 import time
 import wave
 
@@ -27,32 +28,41 @@ start_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 # Set up logger
 logger = log.getLogger()
+logger.setLevel(log.DEBUG)
 log_filepath = 'log/'
 if not os.path.exists(log_filepath):
     os.makedirs(log_filepath)
 
-format_string = '[%(asctime)s - %(levelname)s] %(message)s'
-formatter = log.Formatter(format_string)
-log.info('Initializing application')
-
 # Create file handler for logger
 file_handler = log.FileHandler(log_filepath + start_timestamp + '.log')
 file_handler.setLevel(log.DEBUG)
+format_string = '[%(asctime)s - %(levelname)s] %(message)s'
+formatter = log.Formatter(format_string)
 file_handler.setFormatter(formatter)
+file_handler.setLevel(log.DEBUG)
 logger.addHandler(file_handler)
-logger.setLevel(log.DEBUG)
 
+# Create stream handler to print messages to stdout
+stream_handler = log.StreamHandler(sys.stdout)
+format_string = '[%(levelname)s] %(message)s'
+formatter = log.Formatter(format_string)
+stream_handler.setFormatter(formatter)
+stream_handler.setLevel(log.INFO)
+logger.addHandler(stream_handler)
+
+log.info('Initializing application')
 log.info('Initializing PyAudio')
 p = pyaudio.PyAudio()
 
 # Open the audio files to be played back
 log.info('Initializing audio queue')
 wavnames = glob('./play/*.wav')
-log.info('Recordings in queue: ' + str(wavnames))
+log.debug('Recordings in queue: ' + str(wavnames))
 
 # Randomly select a file to use initially
 current_file = wavnames[randint(0, len(wavnames)-1)]
 rate, data = wavfile.read(current_file)
+
 data_idx = 0
 log.info('Randomly selected ' + current_file + ' for first in queue')
 
@@ -103,10 +113,13 @@ elif port_count > 1:
     log.info('Opening port ' + port_name)
     ino_serial = serial.Serial(port_name, BAUD)
 else:
-    log.info('No ports available, please connect the Arduino')
+    log.error('No ports available, please connect the Arduino')
+    exit()
 
 
 rec_frames = []
+
+log.info('Application started! ^_^')
 
 while True:
     char = ''
