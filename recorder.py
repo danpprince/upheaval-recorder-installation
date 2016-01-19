@@ -119,6 +119,8 @@ else:
 
 rec_frames = []
 
+up_next_files         = []
+
 log.info('Application started! ^_^')
 
 while True:
@@ -150,14 +152,18 @@ while True:
                 in_stream.stop_stream()
 
                 # Save record data in a new wave file with the current timestamp
-                new_fname = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                timestamp_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                new_fname = './play/rec_' + timestamp_str + '.wav'
                 log.info('Saving new recording ' + new_fname)
-                wf = wave.open('./play/rec_' + new_fname + '.wav', 'wb')
+                wf = wave.open(new_fname, 'wb')
                 wf.setnchannels(1)
                 wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
                 wf.setframerate(SAMPLE_RATE)
                 wf.writeframes(b''.join(rec_frames))
                 wf.close()
+
+                # Play this newly recorded file next
+                up_next_files.append(new_fname)
 
                 # Get the new list of wavfiles 
                 wavnames = glob('./play/*.wav')
@@ -181,10 +187,16 @@ while True:
         # If the end of the current wavfile is reached, play a new file
         if data_idx >= len(data):
             # Select a new file to play next that is not the same as the current file
-            new_wav_candidates = [f for f in wavnames if f != current_file]
-            log.debug('Next recording candidates: ' + str(new_wav_candidates))
-            new_file = new_wav_candidates[randint(0, len(new_wav_candidates)-1)]
-            log.info('Playing ' + new_file + ' now')
+            if len(up_next_files) > 0:
+                new_file = up_next_files.pop(0)
+                log.debug('Newly recorded files in queue ' + str(up_next_files))
+                log.info('Playing newly recorded file ' + new_file)
+            else:
+                new_wav_candidates = [f for f in wavnames if f not in recently_played_files]
+                log.debug('Next recording candidates: ' + str(new_wav_candidates))
+                new_file = new_wav_candidates[randint(0, len(new_wav_candidates)-1)]
+                log.info('Playing ' + new_file)
+
             new_rate, new_data = wavfile.read(new_file)
 
             current_file = new_file
