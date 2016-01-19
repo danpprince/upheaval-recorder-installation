@@ -228,7 +228,12 @@ while True:
 
             log.debug('New recently played files queue: ' + str(recently_played_files))
 
-            new_rate, new_data = wavfile.read(REC_DIR + new_file)
+            try:
+                new_rate, new_data = wavfile.read(REC_DIR + new_file)
+            except IOError as e:
+                log.error(e)
+                log.error('File ' + new_file + ' not found, continuing to next loop iteration')
+                continue
 
             current_file = new_file
             data         = new_data
