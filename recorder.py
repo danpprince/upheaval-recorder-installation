@@ -14,6 +14,19 @@ import time
 import wave
 
 
+# Save recorded data in a new wave file with the current timestamp
+def save_new_file(frames):
+    timestamp_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    new_fname = REC_DIR + 'rec_' + timestamp_str + '.wav'
+    log.info('Saving new recording ' + basename(new_fname))
+    wf = wave.open(new_fname, 'wb')
+    wf.setnchannels(1)
+    wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+    wf.setframerate(SAMPLE_RATE)
+    wf.writeframes(b''.join(frames))
+    wf.close()
+    return new_fname
+
 BAUD         =  9600
 AUDIO_CHUNK  =  1024
 SAMPLE_RATE  = 44100
@@ -166,16 +179,7 @@ while True:
                 log.debug('Stopping in stream')
                 in_stream.stop_stream()
 
-                # Save record data in a new wave file with the current timestamp
-                timestamp_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-                new_fname = REC_DIR + 'rec_' + timestamp_str + '.wav'
-                log.info('Saving new recording ' + basename(new_fname))
-                wf = wave.open(new_fname, 'wb')
-                wf.setnchannels(1)
-                wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-                wf.setframerate(SAMPLE_RATE)
-                wf.writeframes(b''.join(rec_frames))
-                wf.close()
+                new_fname = save_new_file(rec_frames)
 
                 # Play this newly recorded file next
                 up_next_files.append(basename(new_fname))
