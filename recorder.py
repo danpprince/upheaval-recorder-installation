@@ -21,20 +21,6 @@ BAUD =  9600
 AUDIO_CHUNK  =  1024
 SAMPLE_RATE  = 44100
 
-# Save recorded data in a new wave file with the current timestamp
-def save_new_file(frames):
-    timestamp_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    new_fname = REC_DIR + 'rec_' + timestamp_str + '.wav'
-    log.info('Saving new recording ' + basename(new_fname))
-    wf = wave.open(new_fname, 'wb')
-    wf.setnchannels(1)
-    wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-    wf.setframerate(SAMPLE_RATE)
-    wf.writeframes(b''.join(frames))
-    wf.close()
-    return new_fname
-
-
 # Set a constant size for the recently played queue in order to control
 # the number of played recordings that must occur before a single recording
 # should be played again
@@ -55,6 +41,26 @@ state = PLAYING
 
 # Initialize starting timestamp
 start_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+# Save recorded data in a new wave file with the current timestamp
+def save_new_file(frames):
+    timestamp_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    new_fname = REC_DIR + 'rec_' + timestamp_str + '.wav'
+    log.info('Saving new recording ' + basename(new_fname))
+
+    # Convert frames to an array of 16b singed integers
+    data = numpy.fromstring(b''.join(frames), 'Int16')
+
+    # Normalize new recordings so they can be played back at an even level
+    NORM_FACTOR_LIMIT = 10
+    norm_factor = pow(2, 15) / max(abs(data))
+    if norm_factor > NORM_FACTOR_LIMIT:
+        norm_factor = NORM_FACTOR_LIMIT
+
+    log.debug('Saving using normalization factor ' + str(norm_factor))
+    wavfile.write(new_fname, SAMPLE_RATE, data*norm_factor) 
+
+    return new_fname
 
 # Set up logger
 logger = log.getLogger()
