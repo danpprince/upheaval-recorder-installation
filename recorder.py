@@ -51,14 +51,17 @@ def save_new_file(frames):
     # Convert frames to an array of 16b singed integers
     data = numpy.fromstring(b''.join(frames), 'Int16')
 
+    # Sum stereo channels to mono
+    mono_data = (data[0::2] + data[1::2])/2
+
     # Normalize new recordings so they can be played back at an even level
     NORM_FACTOR_LIMIT = 10
-    norm_factor = pow(2, 15) / max(abs(data))
+    norm_factor = pow(2, 15) / max(abs(mono_data))
     if norm_factor > NORM_FACTOR_LIMIT:
         norm_factor = NORM_FACTOR_LIMIT
 
     log.debug('Saving using normalization factor ' + str(norm_factor))
-    wavfile.write(new_fname, SAMPLE_RATE, data*norm_factor) 
+    wavfile.write(new_fname, SAMPLE_RATE, mono_data*norm_factor) 
 
     return new_fname
 
@@ -133,7 +136,7 @@ if rec_dev_idx == -1:
 
 
 in_stream = p.open(format=pyaudio.paInt16,
-                   channels=1,
+                   channels=2,
                    rate=SAMPLE_RATE,
                    input=True,
                    input_device_index=rec_dev_idx,
