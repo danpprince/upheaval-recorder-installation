@@ -1,0 +1,4 @@
+numpy==1.9.2
+PyAudio==0.2.9
+pyserial==3.0
+scipy==0.15.1
