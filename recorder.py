@@ -208,6 +208,9 @@ while True:
                 # Play this newly recorded file next
                 up_next_files.append(basename(new_fname))
 
+                # Advance the data index to end the current playing recording
+                data_idx = len(data)
+
                 # Get the new list of wavfiles 
                 wavnames = [basename(f) for f in glob(REC_DIR + '*.wav')]
 
@@ -229,6 +232,9 @@ while True:
 
         # Play this newly recorded file next
         up_next_files.append(basename(new_fname))
+
+        # Advance the data index to end the current playing recording
+        data_idx = len(data)
 
         # Get the new list of wavfiles 
         wavnames = [basename(f) for f in glob(REC_DIR + '*.wav')]
