@@ -54,6 +54,10 @@ def save_new_file(frames):
     # Sum stereo channels to mono
     mono_data = (data[0::2] + data[1::2])/2
 
+    # Remove the last half second of the recording to avoid the sound of
+    # the button clicking
+    mono_data = mono_data[:-SAMPLE_RATE/2]
+
     # Normalize new recordings so they can be played back at an even level
     NORM_FACTOR_LIMIT = 10
     norm_factor = pow(2, 15) / max(abs(mono_data))
@@ -182,6 +186,9 @@ while True:
                 log.info('Button pressed, new state is recording')
                 state = RECORDING
                 ino_serial.write('r')
+
+                # Pause for one second to eliminate sound from button press
+                time.sleep(0.5)
 
                 log.debug('Starting in stream, stopping out stream')
                 in_stream.start_stream()
