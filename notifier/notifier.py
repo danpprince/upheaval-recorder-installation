@@ -89,16 +89,6 @@ def get_credentials():
     return credentials
 
 def main():
-    """Shows basic usage of the Gmail API.
-
-    Creates a Gmail API service object and outputs a list of label names
-    of the user's Gmail account.
-    """
-    credentials = get_credentials()
-    http = credentials.authorize(httplib2.Http())
-    gmail_service = discovery.build('gmail', 'v1', http=http)
-    drive_service = discovery.build('drive', 'v3', http=http)
-
     sender = 'danpprince@gmail.com'
     to     = ', '.join(['danpprince@gmail.com', 'mpuckett2@udayton.edu'])
 
@@ -111,6 +101,19 @@ def main():
         query_str = "'0B4BZrYisXMkDMzdpNGo1OW1CTmM' in parents"
         results = drive_service.files().list(q=query_str, pageSize=20).execute()
         items = results.get('files', [])
+        try:
+            credentials = get_credentials()
+            http = credentials.authorize(httplib2.Http())
+            gmail_service = discovery.build('gmail', 'v1', http=http)
+            drive_service = discovery.build('drive', 'v3', http=http)
+
+            results = drive_service.files().list(q=query_str, pageSize=100).execute()
+            items = results.get('files', [])
+        except Exception as e:
+            print('Error getting new files: ' + str(e))
+            time.sleep(UPDATE_PERIOD * 60)
+            continue
+
         if not items:
             print('No files found.')
         else:
