@@ -100,7 +100,7 @@ def main():
     drive_service = discovery.build('drive', 'v3', http=http)
 
     sender = 'danpprince@gmail.com'
-    to     = 'danpprince@gmail.com'
+    to     = ', '.join(['danpprince@gmail.com', 'mpuckett2@udayton.edu'])
 
     previous_files = []
     with open('upheaval_files.pkl', 'r') as f:
