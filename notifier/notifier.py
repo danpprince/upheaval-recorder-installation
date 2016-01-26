@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime
 from email.mime.text import MIMEText
 import httplib2
 import pickle
@@ -97,10 +98,10 @@ def main():
         previous_files = pickle.load(f)
 
     while True:
+        print('Running at ' + str(datetime.now()))
+
         # Get the files currently in the Drive folder
         query_str = "'0B4BZrYisXMkDMzdpNGo1OW1CTmM' in parents"
-        results = drive_service.files().list(q=query_str, pageSize=20).execute()
-        items = results.get('files', [])
         try:
             credentials = get_credentials()
             http = credentials.authorize(httplib2.Http())
